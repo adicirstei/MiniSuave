@@ -67,5 +67,28 @@ module Console =
             | ex -> printfn "Error : %s" ex.Message
 
 
+module Combinators =
+    let combine first second context = async {
+        let! firstContext = first context
+        match firstContext with
+        | None -> 
+            return None
+        | Some context -> 
+            let! secondContext = second context
+            return secondContext
+    }
 
-            
+    let (>=>) = combine
+
+module Filters =
+    open Http
+
+    let iff condition context =
+        if condition context then
+            context |> Some |> async.Return
+        else
+            None |> async.Return
+
+    let GET = iff (fun context -> context.Request.Type = GET)
+    let POST = iff (fun context -> context.Request.Type = POST)
+    let Path path = iff (fun context -> context.Request.Route = path)
